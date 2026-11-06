@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bike, Clock, Plus, Search, ShoppingBag, Store, X } from 'lucide-react'
+import { ArrowRight, Bike, Clock, Plus, Search, ShoppingBag, Sparkles, Store, X } from 'lucide-react'
 import { brl, categorias, itens, tagInfo } from '../../data/menu'
+import { opcoesPorId, previewBanner } from '../../data/builder'
 import { site } from '../../data/site'
 import { useCart } from '../../store/cart'
 import { Img, useEscape, useScrollLock } from '../ui'
 import { Logo } from '../Logo'
 import { ItemSheet } from './ItemSheet'
+import { MonteSeuLanche } from './MonteSeuLanche'
+import { PilhaLanche } from './PilhaLanche'
 import { Sacola } from './Sacola'
+
+// lanche estático do banner "Monte seu lanche"
+const paoPreview = opcoesPorId.get(previewBanner.pao)
+const camadasPreview = previewBanner.camadas.map((optId, i) => ({ uid: `pv${i}`, optId }))
 
 const normalizar = (s) =>
   s
@@ -21,19 +28,21 @@ export function MenuDigital({ aberto, onClose }) {
   const [catAtiva, setCatAtiva] = useState('destaques')
   const [itemAberto, setItemAberto] = useState(null)
   const [sacolaAberta, setSacolaAberta] = useState(false)
+  const [montarAberto, setMontarAberto] = useState(false)
   const [modo, setModo] = useState('entrega')
 
   const scrollRef = useRef(null)
   const secoesRef = useRef({})
 
   useScrollLock(aberto)
-  useEscape(aberto && !itemAberto && !sacolaAberta, onClose)
+  useEscape(aberto && !itemAberto && !sacolaAberta && !montarAberto, onClose)
 
   useEffect(() => {
     if (!aberto) {
       setBusca('')
       setSacolaAberta(false)
       setItemAberto(null)
+      setMontarAberto(false)
     }
   }, [aberto])
 
@@ -181,6 +190,13 @@ export function MenuDigital({ aberto, onClose }) {
               {/* categorias */}
               <div className="no-scrollbar overflow-x-auto border-t border-line/70">
                 <div className="mx-auto flex max-w-6xl gap-2 px-4 py-3 sm:px-6">
+                  <button
+                    onClick={() => setMontarAberto(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-gold/40 bg-gradient-to-br from-gold/20 to-ember/10 px-4 py-2 text-xs font-semibold whitespace-nowrap text-gold transition-colors hover:border-gold/70"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Monte o seu
+                  </button>
                   {grupos.map((c) => (
                     <button
                       key={c.id}
@@ -203,6 +219,48 @@ export function MenuDigital({ aberto, onClose }) {
             {/* ---------------- LISTA ---------------- */}
             <div ref={scrollRef} className="thin-scroll relative flex-1 overflow-y-auto overscroll-contain">
               <div className="mx-auto max-w-6xl px-4 pt-6 pb-36 sm:px-6">
+                {!busca && (
+                  <button
+                    onClick={() => setMontarAberto(true)}
+                    className="group relative mb-8 flex w-full items-center gap-4 overflow-hidden rounded-3xl border border-gold/25 bg-gradient-to-br from-elevated via-coal to-ink p-4 text-left transition-colors duration-500 hover:border-gold/55 sm:gap-7 sm:p-6"
+                  >
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute -top-20 -right-12 h-52 w-52 rounded-full bg-ember/12 blur-3xl"
+                    />
+                    <span className="relative shrink-0">
+                      <PilhaLanche
+                        pao={paoPreview}
+                        camadas={camadasPreview}
+                        alturaMax={132}
+                        largura={112}
+                        glow={false}
+                        className="transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-1.5"
+                      />
+                    </span>
+
+                    <span className="relative min-w-0 flex-1">
+                      <span className="eyebrow flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3" /> Novidade
+                      </span>
+                      <span className="display mt-2 block text-2xl text-bone sm:text-3xl">
+                        Monte seu lanche
+                      </span>
+                      <span className="mt-2 block text-xs leading-relaxed text-ash sm:text-sm">
+                        Escolhe o pão, empilha carne, queijo, bacon, salada e molho — e vê o lanche
+                        crescer na tela a cada ingrediente.
+                      </span>
+                    </span>
+
+                    <span
+                      aria-hidden
+                      className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-gold to-ember text-ink transition-transform duration-300 group-hover:scale-110"
+                    >
+                      <ArrowRight className="h-5 w-5" strokeWidth={2.4} />
+                    </span>
+                  </button>
+                )}
+
                 {grupos.length === 0 && (
                   <div className="py-24 text-center">
                     <span className="text-4xl opacity-40">🔍</span>
@@ -338,6 +396,7 @@ export function MenuDigital({ aberto, onClose }) {
       </AnimatePresence>
 
       <ItemSheet item={itemAberto} onClose={() => setItemAberto(null)} />
+      <MonteSeuLanche aberto={montarAberto} onClose={() => setMontarAberto(false)} />
       <Sacola
         aberta={sacolaAberta}
         onClose={() => setSacolaAberta(false)}

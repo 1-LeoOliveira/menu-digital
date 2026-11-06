@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# saída da prévia da pilha (ferramenta de ajuste)
+previa-pilha.jpg

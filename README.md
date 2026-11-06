@@ -2,7 +2,9 @@
 
 Landing page premium para hamburgueria com **menu digital completo** embutido: o botão “Peça já”
 abre um cardápio em tela cheia com busca, categorias, adicionais, observações, sacola persistente
-e fechamento do pedido no WhatsApp.
+e fechamento do pedido no WhatsApp. Dentro dele tem o **“Monte seu lanche”**: um montador onde
+cada ingrediente escolhido cai na tela e empilha um lanche de verdade, montado com fotos
+recortadas.
 
 Stack: **Vite 8 + React 19 + Tailwind CSS 4 + Framer Motion**. Sem backend.
 
@@ -37,7 +39,60 @@ entrega: { taxaBase: 7.9, tempoMin: 35, tempoMax: 50, minimoGratis: 89.9 },
 - `tag` aceita `mais-pedido`, `novidade`, `picante` ou `chef`.
 - Item sem foto: use `img: null` e um `emoji` (ex.: `'🍺'`) — o card desenha um tile estilizado.
 
-### 3. Fotos
+### 3. Monte seu lanche — `src/data/builder.js`
+
+É o montador visual. Tudo que aparece nele sai deste arquivo:
+
+- `grupos`: as seções do montador (pão, proteína, queijo, da chapa, salada, molhos). O primeiro
+  grupo é sempre o pão (`tipo: 'unico'` — escolhe só um); os outros são `tipo: 'multiplo'` com
+  `max` por ingrediente.
+- cada opção tem `id, nome, desc, preco, vegetariano` e os campos da montagem:
+
+| campo | o que faz |
+| --- | --- |
+| `img` | o recorte que entra na pilha (`/ingredientes/bacon.webp`) |
+| `imgBase` | só no pão: a metade de baixo |
+| `largura` | largura da camada em % da largura da pilha — é a escala relativa |
+| `fatia` | quanto da altura da foto vira altura de verdade; o resto cobre a camada de baixo. Menor = camada mais fina |
+| `cor` | cor dominante, usada no brilho e se a foto não carregar |
+
+- `builder.maxCamadas` limita a torre (padrão: 10 camadas entre os pães).
+- `sugestoes`: os atalhos (“Do clássico”, “Do monstro”…) que já montam uma combinação pronta.
+- `previewBanner`: o lanche estático que aparece no banner do cardápio.
+
+O lanche montado entra na sacola como um item só, com cada ingrediente listado como adicional —
+então a mensagem do WhatsApp já sai itemizada para a cozinha.
+
+#### As fotos dos ingredientes
+
+As fotos originais (fundo branco) ficam em `fotos-originais/ingredientes/` — **fora** de `public/`,
+para não irem no build. O script de recorte tira o fundo e a sombra, joga fora pedaços de outros
+ingredientes que aparecem na mesma foto, corta no limite do objeto e salva WebP com transparência:
+
+```bash
+npm run ingredientes
+```
+
+Isso regrava `public/ingredientes/*.webp` e `src/data/medidas-ingredientes.js` (o tamanho de cada
+recorte, que a pilha usa para calcular a altura das camadas). Para os pães ele também gera a
+metade de baixo, espelhando e achatando a foto.
+
+Para **trocar ou acrescentar** um ingrediente: coloque o `.jpg` em `fotos-originais/ingredientes/`
+(objeto sozinho, fundo branco, de lado ou em 3/4 — é o ângulo que empilha bem), rode
+`npm run ingredientes` e aponte o `img` da opção para o arquivo novo.
+
+Se sobrar mancha clara do prato em alguma foto, afrouxe a tolerância dela na tabela `AJUSTES`,
+no começo de `scripts/recortar-ingredientes.mjs`.
+
+Para conferir como a pilha fica sem abrir o navegador:
+
+```bash
+npm run previa-pilha    # gera previa-pilha.jpg com vários lanches montados
+```
+
+É a mesma matemática do componente, então serve para calibrar `largura` e `fatia`.
+
+### 4. Fotos
 
 As fotos atuais são do Unsplash, carregadas por URL, apenas como **placeholder**. Para usar as
 fotos reais da casa:
@@ -48,7 +103,7 @@ fotos reais da casa:
 Isso vale também para `src/data/site.js` (unidades) e para os blocos de imagem em
 `src/components/Hero.jsx`, `Historia.jsx`, `Processo.jsx` e `Rodape.jsx`.
 
-### 4. Cores e tipografia — `src/index.css`
+### 5. Cores e tipografia — `src/index.css`
 
 Tudo sai dos tokens no bloco `@theme`:
 
@@ -78,6 +133,8 @@ continua lá.
 src/
   data/site.js          configuração da casa, unidades, depoimentos
   data/menu.js          cardápio, adicionais, categorias, formatador de preço
+  data/builder.js       ingredientes do “Monte seu lanche” + geometria das camadas
+  data/medidas-ingredientes.js   gerado: tamanho de cada recorte
   store/cart.jsx        carrinho (context + reducer + localStorage)
   utils/pedido.js       taxa de entrega e mensagem do WhatsApp
   components/
@@ -86,7 +143,17 @@ src/
     ui.jsx                                      Reveal, Img, scroll lock, Esc
     menu/MenuDigital.jsx                        overlay do cardápio
     menu/ItemSheet.jsx                          detalhe do item + adicionais
+    menu/MonteSeuLanche.jsx                     montador: ingredientes, total e sacola
+    menu/PilhaLanche.jsx                        a pilha animada (fotos caindo e empilhando)
     menu/Sacola.jsx                             sacola + checkout + WhatsApp
+```
+
+```
+scripts/
+  recortar-ingredientes.mjs   fotos originais -> recortes sem fundo (npm run ingredientes)
+  previa-pilha.mjs            rende lanches montados num JPG (npm run previa-pilha)
+fotos-originais/ingredientes/ as fotos originais, fundo branco
+public/ingredientes/          os recortes usados pelo montador
 ```
 
 ## Próximos passos sugeridos

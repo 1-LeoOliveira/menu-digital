@@ -17,7 +17,10 @@ function readStorage() {
 
 /** Linha única por combinação de item + adicionais + observação. */
 const lineKey = (itemId, extras, obs) =>
-  `${itemId}::${[...extras].sort().join(',')}::${obs.trim().toLowerCase()}`
+  `${itemId}::${extras
+    .map((e) => e.id)
+    .sort()
+    .join(',')}::${obs.trim().toLowerCase()}`
 
 function reducer(state, action) {
   switch (action.type) {
